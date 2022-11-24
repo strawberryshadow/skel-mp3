@@ -1,5 +1,7 @@
 package timedelayqueue;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -12,6 +14,14 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class Task2 {
     private static final int DELAY    = 40; // delay of 40 milliseconds
     private static final int NUM_MSGS = 10;
+
+    private static final Gson gson;
+
+    static {
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.serializeNulls();
+        gson = gsonBuilder.create();
+    }
 
     private class Sender implements Runnable {
         private int id;
@@ -30,7 +40,7 @@ public class Task2 {
 //                System.out.printf("Thread %d : Message %d\n", id, i);
                 UUID sndID        = UUID.randomUUID();
                 UUID rcvID        = UUID.randomUUID();
-                String text       = "loren ipsum";
+                String text       = gson.toJson("loren ipsum");
                 PubSubMessage msg = new PubSubMessage(sndID, rcvID, text);
                 msgList.add(msg);
                 if (tdq.add(msg)) {

@@ -12,11 +12,17 @@ public class PubSubMessage implements TimestampedObject {
     private final boolean     isTransient;
     private final UUID        sender;
     private final List<UUID>  receiver;
+    private final MessageType type;
 
     private static final UUID ZERO_UUID = new UUID(0l, 0l);
 
-    public static final PubSubMessage NO_MSG =
-            new PubSubMessage(ZERO_UUID, new Timestamp(0), ZERO_UUID, ZERO_UUID, "");
+    public static final PubSubMessage NO_MSG = new PubSubMessage(
+            ZERO_UUID,
+            new Timestamp(0),
+            ZERO_UUID,
+            ZERO_UUID,
+            "",
+            BasicMessageType.SIMPLEMSG);
 
     @Override
     public UUID getId() {
@@ -32,7 +38,7 @@ public class PubSubMessage implements TimestampedObject {
     // content should be in JSON format to accommodate a variety of
     // message types (e.g., TweetData)
     public PubSubMessage(UUID id, Timestamp timestamp,
-                          UUID sender, UUID receiver, String content) {
+                          UUID sender, UUID receiver, String content, MessageType type) {
         this.id          = id;
         this.timestamp   = timestamp;
         this.sender      = sender;
@@ -40,18 +46,20 @@ public class PubSubMessage implements TimestampedObject {
         this.content     = content;
         this.receiver    = new ArrayList<>();
         this.receiver.add(receiver);
+        this.type        = type;
     }
 
     // create a PubSubMessage instance with explicit args
     // a message may be intended for more than one user
     public PubSubMessage(UUID id, Timestamp timestamp,
-                          UUID sender, List<UUID> receiver, String content) {
+                          UUID sender, List<UUID> receiver, String content, MessageType type) {
         this.id          = id;
         this.timestamp   = timestamp;
         this.sender      = sender;
         this.receiver    = new ArrayList<>(receiver);
         this.isTransient = false;
         this.content     = content;
+        this.type        = type;
     }
 
     // create a PubSubMessage instance with implicit args
@@ -60,7 +68,8 @@ public class PubSubMessage implements TimestampedObject {
                 UUID.randomUUID(),
                 new Timestamp(System.currentTimeMillis()),
                 sender, receiver,
-                content
+                content,
+                BasicMessageType.SIMPLEMSG
         );
     }
 
@@ -70,7 +79,8 @@ public class PubSubMessage implements TimestampedObject {
             UUID.randomUUID(),
             new Timestamp(System.currentTimeMillis()),
             sender, receiver,
-            content
+            content,
+            BasicMessageType.SIMPLEMSG
         );
     }
 
@@ -78,6 +88,11 @@ public class PubSubMessage implements TimestampedObject {
     // note that this will be in JSON format
     public String getContent() {
         return content;
+    }
+
+    // what is the message type?
+    public MessageType getType() {
+        return type;
     }
 
     // is the message transient?

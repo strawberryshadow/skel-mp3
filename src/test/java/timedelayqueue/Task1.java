@@ -1,5 +1,7 @@
 package timedelayqueue;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
@@ -11,13 +13,20 @@ public class Task1 {
 
     private static final int DELAY        = 40; // delay of 40 milliseconds
     private static final int MSG_LIFETIME = 80;
+    private static final Gson gson;
+
+    static {
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.serializeNulls();
+        gson = gsonBuilder.create();
+    }
 
     @Test
     public void testBasicAddRetrieve_NoDelay() {
         TimeDelayQueue tdq = new TimeDelayQueue(DELAY);
         UUID sndID     = UUID.randomUUID();
         UUID rcvID     = UUID.randomUUID();
-        String msgText = "test";
+        String msgText = gson.toJson("test");
         PubSubMessage msg1 = new PubSubMessage(sndID, rcvID, msgText);
         tdq.add(msg1);
         PubSubMessage msg2 = tdq.getNext();
@@ -29,7 +38,7 @@ public class Task1 {
         TimeDelayQueue tdq = new TimeDelayQueue(DELAY);
         UUID sndID     = UUID.randomUUID();
         UUID rcvID     = UUID.randomUUID();
-        String msgText = "test";
+        String msgText = gson.toJson("test");
         PubSubMessage msg1 = new PubSubMessage(sndID, rcvID, msgText);
         tdq.add(msg1);
         try {
@@ -49,7 +58,7 @@ public class Task1 {
 
         UUID sndID     = UUID.randomUUID();
         UUID rcvID     = UUID.randomUUID();
-        String msgText = "test";
+        String msgText = gson.toJson("test");
         TransientPubSubMessage msg1 = new TransientPubSubMessage(sndID, rcvID, msgText, MSG_LIFETIME);
         PubSubMessage          msg2 = new PubSubMessage(sndID, rcvID, msgText);
         tdq.add(msg1);
@@ -70,7 +79,7 @@ public class Task1 {
 
         UUID sndID     = UUID.randomUUID();
         UUID rcvID     = UUID.randomUUID();
-        String msgText = "test";
+        String msgText = gson.toJson("test");
         TransientPubSubMessage msg1 = new TransientPubSubMessage(sndID, rcvID, msgText, MSG_LIFETIME);
         PubSubMessage          msg2 = new PubSubMessage(sndID, rcvID, msgText);
         tdq.add(msg1);
@@ -92,7 +101,7 @@ public class Task1 {
         for (int i = 0; i < NUM_MSGS; i++) {
             UUID sndID        = UUID.randomUUID();
             UUID rcvID        = UUID.randomUUID();
-            String msgText    = "test";
+            String msgText    = gson.toJson("test");
             PubSubMessage msg = new PubSubMessage(sndID, rcvID, msgText);
             tdq.add(msg);
         }
