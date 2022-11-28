@@ -14,11 +14,12 @@ import java.util.stream.StreamSupport;
 public class TimeDelayQueue {
     //things that need to be synchronized
     private PriorityQueue<PubSubMessage> queue;
-    private Map<Timestamp,Integer> operationhistory;
+    private Map<Timestamp, Integer> operationhistory;
     //todo: time reference
 
     private int delay;
     Comparator byTimestamp;
+
     // a comparator to sort messages
     private class PubSubMessageComparator implements Comparator<PubSubMessage> {
         public int compare(PubSubMessage msg1, PubSubMessage msg2) {
@@ -28,13 +29,14 @@ public class TimeDelayQueue {
 
     /**
      * Create a new TimeDelayQueue
+     *
      * @param delay the delay, in milliseconds, that the queue can tolerate, >= 0
      */
     public TimeDelayQueue(int delay) {
-        byTimestamp=new PubSubMessageComparator();
-        queue=new PriorityQueue<>(byTimestamp);
-        this.delay=delay;
-        operationhistory=new TreeMap<>();
+        byTimestamp = new PubSubMessageComparator();
+        queue = new PriorityQueue<>(byTimestamp);
+        this.delay = delay;
+        operationhistory = new TreeMap<>();
     }
 
     // add a message to the TimeDelayQueue
@@ -44,11 +46,11 @@ public class TimeDelayQueue {
         synchronized (TimeDelayQueue.class) {
             if (!contains(msg)) {
                 queue.add(msg);
-                Timestamp now=now();
+                Timestamp now = now();
                 if (operationhistory.containsKey(now)) {
-                    operationhistory.replace(now,operationhistory.get(now)+1);
+                    operationhistory.replace(now, operationhistory.get(now) + 1);
                 } else {
-                    operationhistory.put(now(),1);
+                    operationhistory.put(now(), 1);
                 }
 
                 return true;
@@ -60,12 +62,13 @@ public class TimeDelayQueue {
     /**
      * Get the count of the total number of messages processed
      * by this TimeDelayQueue
+     *
      * @return
      */
     public long getTotalMsgCount() {
         synchronized (TimeDelayQueue.class) {
-            try{
-                return operationhistory.values().stream().filter(x->x>0).reduce(Integer::sum).get();
+            try {
+                return operationhistory.values().stream().filter(x -> x > 0).reduce(Integer::sum).get();
             } catch (NoSuchElementException nse) {
                 return 0;
             }
@@ -78,15 +81,15 @@ public class TimeDelayQueue {
         synchronized (TimeDelayQueue.class) {
             removeExpired();
         }
-            if (withinDelayRange(queue.peek())){
-                if (operationhistory.containsKey(now())) {
-                    operationhistory.replace(now(),operationhistory.get(now())-1);
-                } else {
-                    operationhistory.put(now(),-1);
-                }
-                return queue.poll();
+        if (withinDelayRange(queue.peek())) {
+            if (operationhistory.containsKey(now())) {
+                operationhistory.replace(now(), operationhistory.get(now()) - 1);
+            } else {
+                operationhistory.put(now(), -1);
             }
-            return PubSubMessage.NO_MSG;
+            return queue.poll();
+        }
+        return PubSubMessage.NO_MSG;
 
     }
 
@@ -95,17 +98,21 @@ public class TimeDelayQueue {
     // any window of length timeWindow
     // the operations of interest are add and getNext
     public int getPeakLoad(int timeWindow) {
-        int maxOps=0;
+        int maxOps = 0;
         synchronized (TimeDelayQueue.class) {
-            for (Timestamp start:operationhistory.keySet()) {
-                int currentOps=0;
-                for (Timestamp t:operationhistory.keySet()) {
-                    if (!start.equals(t) && start.getTime()-t.getTime()<=timeWindow) {
-                        currentOps+=Math.abs(operationhistory.get(t));
+            for (Timestamp start : operationhistory.keySet()) {
+                int currentOps = 0;
+                for (Timestamp t : operationhistory.keySet()) {
+
+                    if (Math.abs(start.getTime() - t.getTime()) <= timeWindow) {
+                        currentOps += Math.abs(operationhistory.get(t));
+                        System.out.println("pass:"+(start.getTime()-t.getTime()));
+                    } else {
+                        System.out.println(start.getTime()-t.getTime());
                     }
                 }
-                if (currentOps>maxOps) {
-                    maxOps=currentOps;
+                if (currentOps > maxOps) {
+                    maxOps = currentOps;
                 }
             }
         }
@@ -117,7 +124,7 @@ public class TimeDelayQueue {
 
     private boolean contains(PubSubMessage msg) {
         synchronized (TimeDelayQueue.class) {
-            for (PubSubMessage ps:queue) {
+            for (PubSubMessage ps : queue) {
                 if (ps.getId().equals(msg.getId())) {
                     return true;
                 }
@@ -127,16 +134,16 @@ public class TimeDelayQueue {
     }
 
     private boolean withinDelayRange(PubSubMessage msg) {
-        return now().getTime()-msg.getTimestamp().getTime()>delay;
+        return now().getTime() - msg.getTimestamp().getTime() > delay;
         //todo find out if the units match; i think they do?
     }
 
     private boolean expired(PubSubMessage msg) {
         synchronized (TimeDelayQueue.class) {
             if (msg.isTransient() && contains(msg)) {
-                TransientPubSubMessage transientmsg=(TransientPubSubMessage) msg;
-                boolean inRange=transientmsg.getLifetime()>=
-                        now().getTime()- (transientmsg.getTimestamp().getTime());
+                TransientPubSubMessage transientmsg = (TransientPubSubMessage) msg;
+                boolean inRange = transientmsg.getLifetime() >=
+                        now().getTime() - (transientmsg.getTimestamp().getTime());
                 if (!inRange) {
                     queue.remove(msg);
                 }
@@ -150,7 +157,7 @@ public class TimeDelayQueue {
 
     private void removeExpired() {
         synchronized (TimeDelayQueue.class) {
-            for (PubSubMessage ps:queue) {
+            for (PubSubMessage ps : queue) {
                 expired(ps);
             }
         }

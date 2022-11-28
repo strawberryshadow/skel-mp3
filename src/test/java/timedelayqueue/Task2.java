@@ -150,7 +150,7 @@ public class Task2 {
         long endTime = System.currentTimeMillis();
 
         int window = (int) ((endTime - startTime) % Integer.MAX_VALUE);
-
+        System.out.println("window="+window);
         assertEquals(NUM_WRITERS * NUM_MSGS, tdq.getPeakLoad(window));
     }
 
